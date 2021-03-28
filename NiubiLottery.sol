@@ -1287,7 +1287,6 @@ contract NiubiLottery is LotteryOwnable, Initializable {
     function  multiBuy(uint256 _price, uint8[4][] memory _numbers) external inDrawingPhase {
         require (_price >= minPrice, 'price must above minPrice');
         uint256 totalPrice = 0;
-        uint256 buyTotalAmount = 0;
         uint256 subTotalAddresses = 0;
         for (uint i = 0; i < _numbers.length; i++) {
             for (uint j = 0; j < 4; j++) {
@@ -1299,7 +1298,6 @@ contract NiubiLottery is LotteryOwnable, Initializable {
                 subTotalAddresses = subTotalAddresses + 1;
             }
             userInfo[msg.sender].push(tokenId);
-            buyTotalAmount = buyTotalAmount.add(_price);
             totalPrice = totalPrice.add(_price);
             uint64[keyLengthForEachBuy] memory numberIndexKey = generateNumberIndexKey(_numbers[i]);
             for (uint k = 0; k < keyLengthForEachBuy; k++) {
@@ -1307,7 +1305,7 @@ contract NiubiLottery is LotteryOwnable, Initializable {
             }
         }
         totalAddresses = totalAddresses + subTotalAddresses;
-        totalAmount = totalAmount.add(buyTotalAmount);
+        totalAmount = totalAmount.add(totalPrice);
         lastTimestamp = block.timestamp;
         
         niu.safeTransferFrom(address(msg.sender), address(this), totalPrice);
