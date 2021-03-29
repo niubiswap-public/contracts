@@ -1288,12 +1288,14 @@ contract NiubiLottery is LotteryOwnable, Initializable {
         require (_price >= minPrice, 'price must above minPrice');
         uint256 totalPrice = 0;
         uint256 subTotalAddresses = 0;
+        uint8 _maxNumber = maxNumber;
+        uint256 _issueIndex = issueIndex;
         for (uint i = 0; i < _numbers.length; i++) {
             for (uint j = 0; j < 4; j++) {
-                require (_numbers[i][j] <= maxNumber && _numbers[i][j] > 0, 'exceed number scope');
+                require (_numbers[i][j] <= _maxNumber && _numbers[i][j] > 0, 'exceed number scope');
             }
-            uint256 tokenId = lotteryNFT.newLotteryItem(msg.sender, _numbers[i], _price, issueIndex);
-            lotteryInfo[issueIndex].push(tokenId);
+            uint256 tokenId = lotteryNFT.newLotteryItem(msg.sender, _numbers[i], _price, _issueIndex);
+            lotteryInfo[_issueIndex].push(tokenId);
             if (userInfo[msg.sender].length == 0) {
                 subTotalAddresses = subTotalAddresses + 1;
             }
@@ -1301,7 +1303,7 @@ contract NiubiLottery is LotteryOwnable, Initializable {
             totalPrice = totalPrice.add(_price);
             uint64[keyLengthForEachBuy] memory numberIndexKey = generateNumberIndexKey(_numbers[i]);
             for (uint k = 0; k < keyLengthForEachBuy; k++) {
-                userBuyAmountSum[issueIndex][numberIndexKey[k]]=userBuyAmountSum[issueIndex][numberIndexKey[k]].add(_price);
+                userBuyAmountSum[_issueIndex][numberIndexKey[k]]=userBuyAmountSum[_issueIndex][numberIndexKey[k]].add(_price);
             }
         }
         totalAddresses = totalAddresses + subTotalAddresses;
