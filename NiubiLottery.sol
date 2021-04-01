@@ -1265,11 +1265,13 @@ contract NiubiLottery is LotteryOwnable, Initializable {
 
     function buy(uint256 _price, uint8[4] memory _numbers) external inDrawingPhase {
         require (_price >= minPrice, 'price must above minPrice');
+        uint8 _maxNumber = maxNumber;
         for (uint i = 0; i < 4; i++) {
-            require (_numbers[i] <= maxNumber, 'exceed number scope');
+            require (_numbers[i] <= _maxNumber, 'exceed number scope');
         }
-        uint256 tokenId = lotteryNFT.newLotteryItem(msg.sender, _numbers, _price, issueIndex);
-        lotteryInfo[issueIndex].push(tokenId);
+        uint256 _issueIndex = issueIndex;
+        uint256 tokenId = lotteryNFT.newLotteryItem(msg.sender, _numbers, _price, _issueIndex);
+        lotteryInfo[_issueIndex].push(tokenId);
         if (userInfo[msg.sender].length == 0) {
             totalAddresses = totalAddresses + 1;
         }
@@ -1278,7 +1280,7 @@ contract NiubiLottery is LotteryOwnable, Initializable {
         lastTimestamp = block.timestamp;
         uint64[keyLengthForEachBuy] memory userNumberIndex = generateNumberIndexKey(_numbers);
         for (uint i = 0; i < keyLengthForEachBuy; i++) {
-            userBuyAmountSum[issueIndex][userNumberIndex[i]]=userBuyAmountSum[issueIndex][userNumberIndex[i]].add(_price);
+            userBuyAmountSum[_issueIndex][userNumberIndex[i]]=userBuyAmountSum[_issueIndex][userNumberIndex[i]].add(_price);
         }
         niu.safeTransferFrom(address(msg.sender), address(this), _price);
         emit Buy(msg.sender, tokenId);
@@ -1286,25 +1288,26 @@ contract NiubiLottery is LotteryOwnable, Initializable {
 
     function  multiBuy(uint256 _price, uint8[4][] memory _numbers) external inDrawingPhase {
         require (_price >= minPrice, 'price must above minPrice');
-        uint256 totalPrice  = 0;
+        uint256 totalPrice = _price.mul(_numbers.length);
+        uint8 _maxNumber = maxNumber;
+        uint256 _issueIndex = issueIndex;
+        bool isNewUser = (userInfo[msg.sender].length == 0);
         for (uint i = 0; i < _numbers.length; i++) {
             for (uint j = 0; j < 4; j++) {
-                require (_numbers[i][j] <= maxNumber && _numbers[i][j] > 0, 'exceed number scope');
+                require (_numbers[i][j] <= _maxNumber && _numbers[i][j] > 0, 'exceed number scope');
             }
-            uint256 tokenId = lotteryNFT.newLotteryItem(msg.sender, _numbers[i], _price, issueIndex);
-            lotteryInfo[issueIndex].push(tokenId);
-            if (userInfo[msg.sender].length == 0) {
-                totalAddresses = totalAddresses + 1;
-            }
+            uint256 tokenId = lotteryNFT.newLotteryItem(msg.sender, _numbers[i], _price, _issueIndex);
+            lotteryInfo[_issueIndex].push(tokenId);
             userInfo[msg.sender].push(tokenId);
-            totalAmount = totalAmount.add(_price);
-            lastTimestamp = block.timestamp;
-            totalPrice = totalPrice.add(_price);
             uint64[keyLengthForEachBuy] memory numberIndexKey = generateNumberIndexKey(_numbers[i]);
             for (uint k = 0; k < keyLengthForEachBuy; k++) {
-                userBuyAmountSum[issueIndex][numberIndexKey[k]]=userBuyAmountSum[issueIndex][numberIndexKey[k]].add(_price);
+                userBuyAmountSum[_issueIndex][numberIndexKey[k]]=userBuyAmountSum[_issueIndex][numberIndexKey[k]].add(_price);
             }
         }
+        if (isNewUser) totalAddresses++;
+        totalAmount = totalAmount.add(totalPrice);
+        lastTimestamp = block.timestamp;
+        
         niu.safeTransferFrom(address(msg.sender), address(this), totalPrice);
         emit MultiBuy(msg.sender, totalPrice);
     }
